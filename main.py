@@ -1,5 +1,9 @@
 import logging
 
+import pygame
+
+pygame.init()
+screen = pygame.display.set_mode([640, 320])
 logging.basicConfig(level=logging.DEBUG)
 log = logging.getLogger(__name__)
 
@@ -15,7 +19,7 @@ delay_timer = 0  # 8 bits
 sound_timer = 0  # 8 bits
 frame_buffer = []  # 64x32 bits each bit is a pixel
 program_counter = 0  # 16 bits
-memory = [b"\xF1\x00"] * 4096  # 4096 bytes
+memory = [b"\xda\xbf"] * 4096  # 4096 bytes
 
 
 def load_file(filename):
@@ -41,12 +45,12 @@ def add_register(register, value):
     log.debug(f"add: {value} to register: {register}")
 
 
-def get_first_nibble(instruction):
-    return instruction[0] >> 4
+def get_first_nibble(byte):
+    return byte >> 4
 
 
-def get_second_nibble(instruction):
-    return ((instruction >> 4) << 4) ^ instruction
+def get_second_nibble(byte):
+    return ((byte >> 4) << 4) ^ byte
 
 
 def set_index_register(value):
@@ -55,12 +59,32 @@ def set_index_register(value):
     log.debug(f"setting index register to: {value}")
 
 
+def draw(x, y, n):
+    # print(f"x: {x}, y: {y}, n: {n}")
+    pixel_x = registers[x] % 64
+    pixel_y = registers[y] % 32
+    registers[15] = 0
+    for i in range(n):
+        ith_byte = memory[index_register]
+        #do some shit
+
+
+def draw_frame():
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            pygame.quit()
+
+    screen.fill((255, 255, 255))
+    pygame.draw.rect(screen, (0, 0, 255), pygame.Rect((0, 0), (30, 30)), 75)
+    pygame.display.flip()
+
+
 def fetch_decode_execute():
     global program_counter
 
     while True:
         current_instruction = memory[program_counter]
-        first_nibble = get_first_nibble(current_instruction)
+        first_nibble = get_first_nibble(current_instruction[0])
         second_nibble = get_second_nibble(current_instruction[0])
         second_byte = current_instruction[1]
         last_three_nibbles = second_nibble * 256 + current_instruction[1]
@@ -79,11 +103,13 @@ def fetch_decode_execute():
                 add_register(second_nibble, second_byte)
             case 10:
                 set_index_register(last_three_nibbles)
+            case 13:
+                draw(second_nibble, get_first_nibble(current_instruction[1]), get_second_nibble(current_instruction[1]))
             case _:
                 print(f"FATAL ERROR: {current_instruction} is not a recognised opcode")
 
         # print(program_counter)
-        break
+        draw_frame()
 
 
 if __name__ == '__main__':
