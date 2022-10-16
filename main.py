@@ -39,7 +39,6 @@ def load_file(filename):
         for i, byte in enumerate(file_bytes):
             memory[512 + i] = byte
 
-    # print(memory)
     program_counter = 512
     fetch_decode_execute()
 
@@ -73,7 +72,6 @@ def set_index_register(value):
 
 
 def draw(x, y, n):
-    # print(f"x: {x}, y: {y}, n: {n}")
     registers[15] = 0
     start_x = registers[x] % 64
     start_y = registers[y] % 32
@@ -96,8 +94,6 @@ def draw(x, y, n):
                     registers[15] = 1
                 frame_buffer[pixel_y][pixel_x] = 1
 
-    draw_frame()
-
 
 def draw_frame():
     for event in pygame.event.get():
@@ -115,11 +111,15 @@ def draw_frame():
 
 def fetch_decode_execute():
     global program_counter
+    cpu_cycles = 0
 
     while True:
+        if cpu_cycles % 1000 == 0:
+            draw_frame()
         current_instruction_first_byte = memory[program_counter]
         current_instruction_second_byte = memory[program_counter + 1]
-        current_instruction = (current_instruction_first_byte*256 + current_instruction_second_byte).to_bytes(2, "big")
+        current_instruction = (current_instruction_first_byte * 256 + current_instruction_second_byte).to_bytes(2,
+                                                                                                                "big")
         first_nibble = get_first_nibble(current_instruction_first_byte)
         second_nibble = get_second_nibble(current_instruction_first_byte)
         second_byte = current_instruction_second_byte
@@ -130,9 +130,9 @@ def fetch_decode_execute():
                     case b"\x00\xE0":
                         clear_screen()
             case 1:
-                # only support jump so far
                 program_counter = last_three_nibbles
-                print(f"I jumped to: {program_counter}")
+                log.debug(f"I jumped to: {program_counter}")
+                cpu_cycles += 1
                 continue
             case 6:
                 set_register(second_nibble, second_byte)
@@ -143,15 +143,13 @@ def fetch_decode_execute():
             case 13:
                 draw(second_nibble, get_first_nibble(current_instruction[1]), get_second_nibble(current_instruction[1]))
             case _:
-                print(f"FATAL ERROR: {current_instruction} is not a recognised opcode")
+                log.error(f"FATAL ERROR: {current_instruction} is not a recognised opcode")
 
+        cpu_cycles += 1
         program_counter += 2
 
-        # print(program_counter)
-        # draw_frame()
-        # break
+    log.error("unhandled error, mainloop interrupted")
 
 
 if __name__ == '__main__':
-    # fetch_decode_execute()
     load_file("ibm-logo.ch8")
