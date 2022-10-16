@@ -108,7 +108,7 @@ def draw_frame():
     for i, row in enumerate(frame_buffer):
         for j, bit in enumerate(frame_buffer[i]):
             if bit:
-                pygame.draw.rect(screen, (0, 0, 255), pygame.Rect((i * 10, j * 10), (10, 10)), 1)
+                pygame.draw.rect(screen, (0, 0, 255), pygame.Rect((j * 10, i * 10), (10, 10)), 1)
 
     pygame.display.flip()
 
