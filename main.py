@@ -1,6 +1,10 @@
 import logging
+import sys
+import time
 
 import pygame
+
+BILLION = 1000000000
 
 pygame.init()
 screen = pygame.display.set_mode([640, 320])
@@ -26,12 +30,16 @@ stack_pointer = 0  # 8 bits so stack is split into 256 "slots" of 2 bytes each
 delay_timer = 0  # 8 bits
 sound_timer = 0  # 8 bits
 program_counter = 0  # 16 bits
-memory = [0] * 2048  # 4096 bytes
+memory = [0] * 4096  # 4096 bytes
 memory[0] = 0
 memory[1] = 0
+memory[511] = 0  # ***** THIS IS A TEST REMEMBER TO REMOVE ME ****
+new_frame_buffer()
+
+timer = time.perf_counter_ns()
 
 
-def load_file(filename):
+def load_file(filename) -> None:
     global program_counter
     log.debug(f"I am loading: {filename}")
     with open(filename, "rb") as file:
@@ -52,26 +60,27 @@ def set_register(register, value) -> None:
     log.debug(f"set register: {register} to: {value}")
 
 
-def add_register(register, value):
+def add_register(register, value) -> None:
     registers[register] += value
+    registers[register] %= 256
     log.debug(f"add: {value} to register: {register}")
 
 
-def get_first_nibble(byte):
+def get_first_nibble(byte) -> int:
     return byte >> 4
 
 
-def get_second_nibble(byte):
+def get_second_nibble(byte) -> int:
     return ((byte >> 4) << 4) ^ byte
 
 
-def set_index_register(value):
+def set_index_register(value) -> None:
     global index_register
     index_register = value
     log.debug(f"setting index register to: {value}")
 
 
-def draw(x, y, n):
+def draw(x, y, n) -> None:
     registers[15] = 0
     start_x = registers[x] % 64
     start_y = registers[y] % 32
@@ -95,7 +104,7 @@ def draw(x, y, n):
                 frame_buffer[pixel_y][pixel_x] = 1
 
 
-def draw_frame():
+def draw_frame() -> None:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             pygame.quit()
@@ -109,11 +118,28 @@ def draw_frame():
     pygame.display.flip()
 
 
-def fetch_decode_execute():
-    global program_counter
+def unknown_instruction(current_instruction) -> None:
+    quit(f"FATAL ERROR: {current_instruction} is not a recognised opcode")
+
+
+def quit(message: str) -> None:
+    log.error(message)
+    pygame.quit()
+    sys.exit(1)
+
+
+def fetch_decode_execute() -> None:
+    global program_counter, timer
     cpu_cycles = 0
 
     while True:
+        # ####### this block is for going slow
+        # current_time = time.perf_counter_ns()
+        # if current_time - timer < BILLION:
+        #     time.sleep((BILLION - (current_time - timer)) / BILLION)
+        #     timer = time.perf_counter_ns()
+        # #######
+
         if cpu_cycles % 1000 == 0:
             draw_frame()
         current_instruction_first_byte = memory[program_counter]
@@ -123,21 +149,74 @@ def fetch_decode_execute():
         first_nibble = get_first_nibble(current_instruction_first_byte)
         second_nibble = get_second_nibble(current_instruction_first_byte)
         second_byte = current_instruction_second_byte
+        third_nibble = get_first_nibble(current_instruction_second_byte)
+        fourth_nibble = get_second_nibble(current_instruction_second_byte)
         last_three_nibbles = second_nibble * 256 + current_instruction_second_byte
         match first_nibble:
             case 0:
                 match current_instruction:
                     case b"\x00\xE0":
                         clear_screen()
+                    case b"\x00\xEE":
+                        program_counter = stack.pop()
             case 1:
                 program_counter = last_three_nibbles
                 log.debug(f"I jumped to: {program_counter}")
                 cpu_cycles += 1
                 continue
+            case 2:
+                stack.append(program_counter)
+                program_counter = last_three_nibbles
+                log.debug(f"I jumped to: {program_counter} and pushed {stack[-1]} to the stack")
+            case 3:
+                if registers[second_nibble] == second_byte:
+                    program_counter += 2
+            case 4:
+                # She jumped like JNE up onto my erection I picked up that ho like straight garbage collection
+                if registers[second_nibble] != second_byte:
+                    program_counter += 2
+            case 5:
+                if fourth_nibble != 0:
+                    unknown_instruction(current_instruction)
+                if registers[second_nibble] == registers[third_nibble]:
+                    program_counter += 2
             case 6:
                 set_register(second_nibble, second_byte)
             case 7:
                 add_register(second_nibble, second_byte)
+            case 8:
+                match fourth_nibble:
+                    case 0:
+                        registers[second_nibble] = registers[third_nibble]
+                    case 1:
+                        registers[second_nibble] = registers[second_nibble] | registers[third_nibble]
+                    case 2:
+                        registers[second_nibble] = registers[second_nibble] & registers[third_nibble]
+                    case 3:
+                        registers[second_nibble] = registers[second_nibble] ^ registers[third_nibble]
+                    case 4:
+                        if registers[second_nibble] + registers[third_nibble] > 255:
+                            registers[15] = 1
+                        else:
+                            registers[15] = 0
+                        registers[second_nibble] = (registers[second_nibble] + registers[third_nibble]) % 256
+                    case 5:
+                        if registers[second_nibble] > registers[third_nibble]:
+                            registers[15] = 1
+                        else:
+                            registers[15] = 0
+                        registers[second_nibble] = (registers[second_nibble] - registers[third_nibble]) % 256
+                    case 7:
+                        if registers[third_nibble] > registers[second_nibble]:
+                            registers[15] = 1
+                        else:
+                            registers[15] = 0
+                        registers[second_nibble] = (registers[third_nibble] - registers[second_nibble]) % 256
+            case 9:
+                if fourth_nibble != 0:
+                    unknown_instruction(current_instruction)
+                if registers[second_nibble] != registers[third_nibble]:
+                    program_counter += 2
             case 10:
                 set_index_register(last_three_nibbles)
             case 13:
@@ -152,4 +231,6 @@ def fetch_decode_execute():
 
 
 if __name__ == '__main__':
-    load_file("ibm-logo.ch8")
+    # load_file("ibm-logo.ch8")
+    load_file("test_opcode.ch8")
+    # load_file("chip8-test-suite.ch8")
