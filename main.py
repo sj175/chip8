@@ -5,6 +5,7 @@ import time
 import pygame
 
 BILLION = 1000000000
+TYPE = "COSMAC_VIP"
 
 pygame.init()
 screen = pygame.display.set_mode([640, 320])
@@ -196,22 +197,37 @@ def fetch_decode_execute() -> None:
                         registers[second_nibble] = registers[second_nibble] ^ registers[third_nibble]
                     case 4:
                         if registers[second_nibble] + registers[third_nibble] > 255:
-                            registers[15] = 1
+                            carry_bit = 1
                         else:
-                            registers[15] = 0
+                            carry_bit = 0
                         registers[second_nibble] = (registers[second_nibble] + registers[third_nibble]) % 256
+                        registers[15] = carry_bit
                     case 5:
                         if registers[second_nibble] > registers[third_nibble]:
-                            registers[15] = 1
+                            carry_bit = 1
                         else:
-                            registers[15] = 0
+                            carry_bit = 0
                         registers[second_nibble] = (registers[second_nibble] - registers[third_nibble]) % 256
+                        registers[15] = carry_bit
+                    case 6:
+                        if TYPE == "COSMAC_VIP":
+                            registers[second_nibble] = registers[third_nibble]
+                        carry_bit = registers[second_nibble] & 1  # select LSB
+                        registers[second_nibble] >> 1
+                        registers[15] = carry_bit
                     case 7:
                         if registers[third_nibble] > registers[second_nibble]:
-                            registers[15] = 1
+                            carry_bit = 1
                         else:
-                            registers[15] = 0
+                            carry_bit = 0
                         registers[second_nibble] = (registers[third_nibble] - registers[second_nibble]) % 256
+                        registers[15] = carry_bit
+                    case 8:
+                        if TYPE == "COSMAC_VIP":
+                            registers[second_nibble] = registers[third_nibble]
+                        carry_bit = (registers[second_nibble] & 128) >> 7  # select 8-bit MSB
+                        registers[second_nibble] << 1
+                        registers[15] = carry_bit
             case 9:
                 if fourth_nibble != 0:
                     unknown_instruction(current_instruction)
