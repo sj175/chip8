@@ -282,11 +282,11 @@ def fetch_decode_execute() -> None:
                         memory[addr + 2] = num // 100 % 10
                     case 85:
                         # implement ambiguity switch
-                        for i in range(second_nibble):
+                        for i in range(second_nibble + 1):
                             memory[registers[INDEX_REGISTER] + i] = registers[i]
                     case 101:
                         # implement ambiguity switch
-                        for i in range(second_nibble):
+                        for i in range(second_nibble + 1):
                             registers[i] = memory[registers[INDEX_REGISTER] + i]
             case _:
                 log.error(f"FATAL ERROR: {current_instruction} is not a recognised opcode")
