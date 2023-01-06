@@ -39,7 +39,7 @@ program_counter = 0  # 16 bits
 memory = [0] * 4096  # 4096 bytes
 memory[0] = 0
 memory[1] = 0
-memory[511] = 1  # ***** THIS IS A TEST REMEMBER TO REMOVE ME ****
+memory[511] = 2  # ***** THIS IS A TEST REMEMBER TO REMOVE ME ****
 new_frame_buffer()
 
 timer = time.perf_counter_ns()
@@ -270,9 +270,9 @@ def fetch_decode_execute() -> None:
                     case 51:
                         num = registers[second_nibble]
                         addr = registers[INDEX_REGISTER]
-                        memory[addr] = num % 10
+                        memory[addr] = num // 100
                         memory[addr + 1] = num // 10 % 10
-                        memory[addr + 2] = num // 100 % 10
+                        memory[addr + 2] = num % 10
                     case 85:
                         # implement ambiguity switch
                         for i in range(second_nibble + 1):
@@ -293,5 +293,5 @@ def fetch_decode_execute() -> None:
 
 if __name__ == '__main__':
     # load_file("ibm-logo.ch8")
-    load_file("test_opcode.ch8")
-    # load_file("chip8-test-suite.ch8")
+    # load_file("test_opcode.ch8")
+    load_file("chip8-test-suite.ch8")
