@@ -18,6 +18,10 @@ op_codes = {b"00E0": "CLS", b"00EE": "RET", b"1nnn": "JP", b"2nnn": "CALL", b"3x
 frame_buffer = []
 registers = {0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0,
              11: 0, 12: 0, 13: 0, 14: 0, 15: 0, INDEX_REGISTER: 0}  # 8 bits each
+KEYS = {0: pygame.K_1, 1: pygame.K_2, 2: pygame.K_3, 3: pygame.K_4,
+        4: pygame.K_q, 5: pygame.K_w, 6: pygame.K_e, 7: pygame.K_r,
+        8: pygame.K_a, 9: pygame.K_s, 10: pygame.K_d, 11: pygame.K_f,
+        12: pygame.K_z, 13: pygame.K_x, 14: pygame.K_c, 15: pygame.K_v}
 
 
 def new_frame_buffer():
@@ -35,7 +39,7 @@ program_counter = 0  # 16 bits
 memory = [0] * 4096  # 4096 bytes
 memory[0] = 0
 memory[1] = 0
-memory[511] = 0  # ***** THIS IS A TEST REMEMBER TO REMOVE ME ****
+memory[511] = 1  # ***** THIS IS A TEST REMEMBER TO REMOVE ME ****
 new_frame_buffer()
 
 timer = time.perf_counter_ns()
@@ -119,6 +123,10 @@ def draw_frame() -> None:
     pygame.display.flip()
 
 
+def is_pressed(key):
+    return True
+
+
 def unknown_instruction(current_instruction) -> None:
     quit(f"FATAL ERROR: {current_instruction} is not a recognised opcode")
 
@@ -153,6 +161,7 @@ def fetch_decode_execute() -> None:
         third_nibble = get_first_nibble(current_instruction_second_byte)
         fourth_nibble = get_second_nibble(current_instruction_second_byte)
         last_three_nibbles = second_nibble * 256 + current_instruction_second_byte
+
         match first_nibble:
             case 0:
                 match current_instruction:
@@ -162,13 +171,13 @@ def fetch_decode_execute() -> None:
                         program_counter = stack.pop()
             case 1:
                 program_counter = last_three_nibbles
-                log.debug(f"I jumped to: {program_counter}")
+                # log.debug(f"I jumped to: {program_counter}")
                 cpu_cycles += 1
                 continue
             case 2:
                 stack.append(program_counter)
                 program_counter = last_three_nibbles
-                log.debug(f"I jumped to: {program_counter} and pushed {stack[-1]} to the stack")
+                # log.debug(f"I jumped to: {program_counter} and pushed {stack[-1]} to the stack")
             case 3:
                 if registers[second_nibble] == second_byte:
                     program_counter += 2
@@ -237,6 +246,22 @@ def fetch_decode_execute() -> None:
                 set_index_register(last_three_nibbles)
             case 13:
                 draw(second_nibble, get_first_nibble(current_instruction[1]), get_second_nibble(current_instruction[1]))
+            case 14:
+                # print("looking for input")
+                match third_nibble:
+                    case 10:
+                        print(f"second nibble: {second_nibble}")
+                        print(f"registers[second_nibble]: {registers[second_nibble]}")
+                        if not is_pressed(KEYS[registers[second_nibble]]):
+                            print("skip if not key")
+                    case 9:
+                        if is_pressed(KEYS[registers[second_nibble]]):
+                            print("skip if key")
+                    # case _:
+                    #     print(f"first nibble: {first_nibble}")
+                    #     print(f"second nibble: {second_nibble}")
+                    #     print(f"third nibble: {third_nibble}")
+                    #     print(f"fourth nibble: {fourth_nibble}")
             case 15:
                 match second_byte:
                     case 7:
@@ -265,7 +290,7 @@ def fetch_decode_execute() -> None:
                             registers[i] = memory[registers[INDEX_REGISTER] + i]
             case _:
                 log.error(f"FATAL ERROR: {current_instruction} is not a recognised opcode")
-                quit(f"FATAL ERROR: {current_instruction} is not a recognised opcode")
+                quit("Fatal error")
 
         cpu_cycles += 1
         program_counter += 2
@@ -275,5 +300,5 @@ def fetch_decode_execute() -> None:
 
 if __name__ == '__main__':
     # load_file("ibm-logo.ch8")
-    # load_file("test_opcode.ch8")
-    load_file("chip8-test-suite.ch8")
+    load_file("test_opcode.ch8")
+    # load_file("chip8-test-suite.ch8")
