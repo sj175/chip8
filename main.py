@@ -182,7 +182,6 @@ def fetch_decode_execute() -> None:
                 if registers[second_nibble] == second_byte:
                     program_counter += 2
             case 4:
-                # She jumped like JNE up onto my erection I picked up that ho like straight garbage collection
                 if registers[second_nibble] != second_byte:
                     program_counter += 2
             case 5:
@@ -247,7 +246,6 @@ def fetch_decode_execute() -> None:
             case 13:
                 draw(second_nibble, get_first_nibble(current_instruction[1]), get_second_nibble(current_instruction[1]))
             case 14:
-                # print("looking for input")
                 match third_nibble:
                     case 10:
                         print(f"second nibble: {second_nibble}")
@@ -257,11 +255,6 @@ def fetch_decode_execute() -> None:
                     case 9:
                         if is_pressed(KEYS[registers[second_nibble]]):
                             print("skip if key")
-                    # case _:
-                    #     print(f"first nibble: {first_nibble}")
-                    #     print(f"second nibble: {second_nibble}")
-                    #     print(f"third nibble: {third_nibble}")
-                    #     print(f"fourth nibble: {fourth_nibble}")
             case 15:
                 match second_byte:
                     case 7:
