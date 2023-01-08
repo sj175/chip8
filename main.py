@@ -233,7 +233,7 @@ def fetch_decode_execute() -> None:
                         if TYPE == COSMAC:
                             registers[second_nibble] = registers[third_nibble]
                         carry_bit = (registers[second_nibble] & 128) >> 7  # select 8-bit MSB
-                        registers[second_nibble] <<= 1
+                        registers[second_nibble] = (registers[second_nibble] << 1) % 256
                         registers[15] = carry_bit
             case 9:
                 if fourth_nibble != 0:
