@@ -5,7 +5,7 @@ import time
 import pygame
 
 BILLION = 1000000000
-COSMIC = "COSMAC_VIP"
+COSMAC = "COSMAC_VIP"
 TYPE = "SUPER_CHIP"
 INDEX_REGISTER = "index"
 
@@ -218,7 +218,7 @@ def fetch_decode_execute() -> None:
                         registers[second_nibble] = (registers[second_nibble] - registers[third_nibble]) % 256
                         registers[15] = carry_bit
                     case 6:
-                        if TYPE == COSMIC:
+                        if TYPE == COSMAC:
                             registers[second_nibble] = registers[third_nibble]
                         carry_bit = registers[second_nibble] & 1  # select LSB
                         registers[second_nibble] >>= 1
@@ -231,7 +231,7 @@ def fetch_decode_execute() -> None:
                         registers[second_nibble] = (registers[third_nibble] - registers[second_nibble]) % 256
                         registers[15] = carry_bit
                     case 14:
-                        if TYPE == COSMIC:
+                        if TYPE == COSMAC:
                             registers[second_nibble] = registers[third_nibble]
                         carry_bit = (registers[second_nibble] & 128) >> 7  # select 8-bit MSB
                         registers[second_nibble] <<= 1
