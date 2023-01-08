@@ -14,7 +14,6 @@ screen = pygame.display.set_mode([640, 320])
 logging.basicConfig(level=logging.DEBUG)
 log = logging.getLogger(__name__)
 
-op_codes = {b"00E0": "CLS", b"00EE": "RET", b"1nnn": "JP", b"2nnn": "CALL", b"3xkk": "SEVx", b"4xkk": "SNEVx"}
 frame_buffer = []
 registers = {0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0,
              11: 0, 12: 0, 13: 0, 14: 0, 15: 0, INDEX_REGISTER: 0}  # 8 bits each
